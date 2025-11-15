@@ -1,5 +1,4 @@
 import React from "react";
-import "./AnalyticsDashboard.css";
 
 const AnalyticsDashboard = ({ data, timeRange }) => {
   const {
@@ -8,19 +7,18 @@ const AnalyticsDashboard = ({ data, timeRange }) => {
     monthly_trends,
     top_products,
     sustainability_impact,
-  } = data;
+  } = data || {};
 
-  // Gráfico simple de ventas por categoría
   const SalesByCategoryChart = () => {
     const maxRevenue = Math.max(
-      ...sales_by_category.map((item) => item.revenue || 0)
+      ...(sales_by_category?.map((item) => item.revenue || 0) || [0])
     );
 
     return (
       <div className="chart-container">
         <h4>Ventas por Categoría</h4>
         <div className="bar-chart">
-          {sales_by_category.map((item, index) => (
+          {(sales_by_category || []).map((item, index) => (
             <div key={index} className="bar-item">
               <div className="bar-label">{item.category}</div>
               <div className="bar-track">
@@ -41,12 +39,11 @@ const AnalyticsDashboard = ({ data, timeRange }) => {
     );
   };
 
-  // Tendencias mensuales
   const MonthlyTrendsChart = () => (
     <div className="chart-container">
       <h4>Tendencias Mensuales</h4>
       <div className="line-chart">
-        {monthly_trends.map((trend, index) => (
+        {(monthly_trends || []).map((trend, index) => (
           <div key={index} className="trend-item">
             <div className="trend-period">{trend.period}</div>
             <div className="trend-bar">
@@ -65,24 +62,21 @@ const AnalyticsDashboard = ({ data, timeRange }) => {
     </div>
   );
 
-  // Productos más populares
   const TopProductsList = () => (
     <div className="top-products-card">
       <h4>🏆 Productos Más Populares</h4>
       <div className="products-list">
-        {top_products &&
-          top_products.map((product, index) => (
-            <div key={index} className="product-rank">
-              <span className="rank-number">{index + 1}</span>
-              <span className="product-name">{product[0]}</span>
-              <span className="popularity-count">{product[1]} quotes</span>
-            </div>
-          ))}
+        {(top_products || []).map((product, index) => (
+          <div key={index} className="product-rank">
+            <span className="rank-number">{index + 1}</span>
+            <span className="product-name">{product[0]}</span>
+            <span className="popularity-count">{product[1]} quotes</span>
+          </div>
+        ))}
       </div>
     </div>
   );
 
-  // Métricas de Sostenibilidad
   const SustainabilityMetrics = () => (
     <div className="sustainability-card">
       <h4>🌍 Impacto Sostenible</h4>
@@ -142,27 +136,22 @@ const AnalyticsDashboard = ({ data, timeRange }) => {
       </div>
 
       <div className="analytics-grid">
-        {/* Gráfico de Ventas por Categoría */}
         <div className="analytics-card full-width">
           <SalesByCategoryChart />
         </div>
 
-        {/* Tendencias Mensuales */}
         <div className="analytics-card">
           <MonthlyTrendsChart />
         </div>
 
-        {/* Productos Populares */}
         <div className="analytics-card">
           <TopProductsList />
         </div>
 
-        {/* Métricas de Sostenibilidad */}
         <div className="analytics-card">
           <SustainabilityMetrics />
         </div>
 
-        {/* KPIs Detallados */}
         <div className="analytics-card">
           <h4>📊 KPIs Detallados</h4>
           <div className="detailed-kpis">

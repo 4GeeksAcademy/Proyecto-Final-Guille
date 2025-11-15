@@ -1,6 +1,5 @@
 import React from "react";
 import { useAuth } from "../../context/AuthContext";
-import "./CustomerLayout.css";
 
 const CustomerLayout = ({ children }) => {
   const { user, logout } = useAuth();
@@ -13,7 +12,6 @@ const CustomerLayout = ({ children }) => {
 
   return (
     <div className="customer-layout">
-      {/* Header de Lujo */}
       <header className="luxury-header">
         <div className="header-brand">
           <h1>🌱 EcoLuxury Configurator</h1>
@@ -46,10 +44,8 @@ const CustomerLayout = ({ children }) => {
         </div>
       </header>
 
-      {/* Contenido Principal */}
       <main className="customer-main">{children}</main>
 
-      {/* Footer Inspirador */}
       <footer className="luxury-footer">
         <div className="footer-content">
           <div className="footer-mission">

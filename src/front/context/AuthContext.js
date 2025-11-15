@@ -1,4 +1,3 @@
-// webapp/context/AuthContext.js - Versión completa corregida
 import React, { createContext, useState, useContext, useEffect } from "react";
 
 const AuthContext = createContext();
@@ -26,18 +25,16 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const getBackendUrl = () => {
-    return (
-      import.meta.env.VITE_BACKEND_URL ||
-      "https://zany-fishstick-4jr75p9p9jr62jr94-3001.app.github.dev/api"
-    );
+    return import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
   };
 
   const login = async (email, password) => {
     setLoading(true);
     try {
       const backendUrl = getBackendUrl();
+      console.log("🔗 Conectando a:", `${backendUrl}/api/login`);
 
-      const response = await fetch(`${backendUrl}/login`, {
+      const response = await fetch(`${backendUrl}/api/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -46,10 +43,13 @@ export const AuthProvider = ({ children }) => {
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error("❌ Error login:", errorText);
         throw new Error("Credenciales inválidas");
       }
 
       const data = await response.json();
+      console.log("✅ Login exitoso:", data);
 
       localStorage.setItem("token", data.access_token);
       localStorage.setItem("user", JSON.stringify(data.user));
@@ -57,6 +57,7 @@ export const AuthProvider = ({ children }) => {
 
       return data;
     } catch (error) {
+      console.error("💥 Error en login:", error);
       throw error;
     } finally {
       setLoading(false);
@@ -67,8 +68,9 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     try {
       const backendUrl = getBackendUrl();
+      console.log("🔗 Conectando a:", `${backendUrl}/api/register`);
 
-      const response = await fetch(`${backendUrl}/register`, {
+      const response = await fetch(`${backendUrl}/api/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -78,10 +80,12 @@ export const AuthProvider = ({ children }) => {
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.error("❌ Error registro:", errorData);
         throw new Error(errorData.error || "Error en el registro");
       }
 
       const data = await response.json();
+      console.log("✅ Registro exitoso:", data);
 
       localStorage.setItem("token", data.access_token);
       localStorage.setItem("user", JSON.stringify(data.user));
@@ -89,6 +93,7 @@ export const AuthProvider = ({ children }) => {
 
       return data;
     } catch (error) {
+      console.error("💥 Error en registro:", error);
       throw error;
     } finally {
       setLoading(false);

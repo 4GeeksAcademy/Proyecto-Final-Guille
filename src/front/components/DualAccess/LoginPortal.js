@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
-import "./LoginPortal.css";
 
 const LoginPortal = () => {
   const [activeRole, setActiveRole] = useState("customer");
@@ -42,6 +41,7 @@ const LoginPortal = () => {
       }
     } catch (error) {
       console.error("Auth error:", error);
+      alert(error.message);
     }
   };
 
@@ -53,7 +53,6 @@ const LoginPortal = () => {
           <p>Accede a tu espacio personalizado</p>
         </div>
 
-        {/* Selector de Rol */}
         <div className="role-selector">
           <div
             className={`role-option ${
@@ -82,7 +81,6 @@ const LoginPortal = () => {
           </div>
         </div>
 
-        {/* Formulario */}
         <form onSubmit={handleSubmit} className="auth-form">
           <h3>
             {isLogin ? "Acceder" : "Registrarse"} como{" "}

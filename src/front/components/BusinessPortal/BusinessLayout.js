@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
-import "./BusinessLayout.css";
 
 const BusinessLayout = ({ children }) => {
   const { user, logout } = useAuth();
@@ -14,7 +13,6 @@ const BusinessLayout = ({ children }) => {
 
   return (
     <div className="business-layout">
-      {/* Sidebar de Navegación */}
       <aside className={`business-sidebar ${sidebarOpen ? "open" : "closed"}`}>
         <div className="sidebar-header">
           <div className="sidebar-brand">
@@ -30,7 +28,6 @@ const BusinessLayout = ({ children }) => {
         </div>
 
         <nav className="business-nav">
-          {/* Sección Analytics */}
           <div className="nav-section">
             <h4>ANALYTICS</h4>
             <a href="/business" className="nav-item">
@@ -51,7 +48,6 @@ const BusinessLayout = ({ children }) => {
             </a>
           </div>
 
-          {/* Sección Gestión */}
           <div className="nav-section">
             <h4>GESTIÓN</h4>
             <a href="/business/products" className="nav-item">
@@ -66,13 +62,8 @@ const BusinessLayout = ({ children }) => {
               <span className="nav-icon">📦</span>
               <span className="nav-label">Inventario</span>
             </a>
-            <a href="/business/orders" className="nav-item">
-              <span className="nav-icon">📦</span>
-              <span className="nav-label">Órdenes</span>
-            </a>
           </div>
 
-          {/* Sección Reportes */}
           <div className="nav-section">
             <h4>REPORTES</h4>
             <a href="/business/reports/sales" className="nav-item">
@@ -82,10 +73,6 @@ const BusinessLayout = ({ children }) => {
             <a href="/business/reports/sustainability" className="nav-item">
               <span className="nav-icon">🌍</span>
               <span className="nav-label">Reportes Sostenibilidad</span>
-            </a>
-            <a href="/business/reports/performance" className="nav-item">
-              <span className="nav-icon">🚀</span>
-              <span className="nav-label">Performance</span>
             </a>
           </div>
         </nav>
@@ -103,7 +90,6 @@ const BusinessLayout = ({ children }) => {
         </div>
       </aside>
 
-      {/* Contenido Principal */}
       <main className="business-main">
         <header className="business-header">
           <div className="header-actions">
@@ -114,11 +100,6 @@ const BusinessLayout = ({ children }) => {
             <button className="btn-export">
               <span className="btn-icon">📤</span>
               Exportar Datos
-            </button>
-            <button className="btn-notifications">
-              <span className="btn-icon">🔔</span>
-              Notificaciones
-              <span className="notification-badge">3</span>
             </button>
           </div>
           <div className="header-info">
