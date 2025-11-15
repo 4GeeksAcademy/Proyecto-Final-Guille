@@ -1,127 +1,110 @@
-from flask import Blueprint, request, jsonify
+from flask import request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from api.models import db, Quote, Product, User, CustomerProfile
-import json
-
-quotes_bp = Blueprint('quotes', __name__)
-
-# POST /quotes - Crear nueva cotización
+from ..models import db, Product, Quote, QuoteItem, User
 
 
-@quotes_bp.route('/quotes', methods=['POST'])
-@jwt_required()
-def create_quote():
-    try:
-        user_id = get_jwt_identity()
-        data = request.get_json()
+def setup_quotes_routes(app):
 
-        # Validar producto
-        product = Product.query.get(data.get('product_id'))
-        if not product:
-            return jsonify({'error': 'Product not found'}), 404
+    @app.route('/quotes', methods=['POST'])
+    @jwt_required()
+    def create_quote():
+        try:
+            current_user_id = get_jwt_identity()
+            data = request.get_json()
+            product = Product.query.get(data['product_id'])
 
-        # Calcular precio total basado en configuración
-        base_price = product.base_price
-        configuration = data.get('configuration', {})
-        additional_cost = calculate_additional_cost(configuration)
-        total_price = base_price + additional_cost
+            if not product:
+                return jsonify({'error': 'Product not found'}), 404
 
-        # Calcular métricas de sostenibilidad
-        co2_savings = calculate_co2_savings(product, configuration)
-        sustainability_score = calculate_sustainability_score(configuration)
+            # Calculate total price based on customizations
+            base_price = product.price
+            additional_cost = 0
+            customizations = data.get('customization', {})
 
-        quote = Quote(
-            user_id=user_id,
-            product_id=product.id,
-            configuration=configuration,
-            total_price=total_price,
-            co2_savings=co2_savings,
-            sustainability_score=sustainability_score
-        )
+            # Process customizations and calculate additional costs
+            for feature, option in customizations.items():
+                if (product.features and
+                    feature in product.features and
+                        isinstance(product.features[feature], dict)):
+                    feature_options = product.features[feature]
+                    if option in feature_options:
+                        additional_cost += feature_options[option].get(
+                            'additional_cost', 0)
 
-        db.session.add(quote)
-        db.session.commit()
+            total_price = base_price + additional_cost
 
-        return jsonify({
-            'message': 'Quote created successfully',
-            'quote': {
-                'id': quote.id,
-                'total_price': quote.total_price,
-                'co2_savings': quote.co2_savings,
-                'sustainability_score': quote.sustainability_score
-            }
-        }), 201
+            # Create quote
+            quote = Quote(
+                user_id=current_user_id,
+                product_id=data['product_id'],
+                customization=customizations,
+                total_price=total_price,
+                status='pending'
+            )
 
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+            db.session.add(quote)
+            db.session.commit()
 
-# GET /quotes - Listar cotizaciones del usuario
+            return jsonify({
+                'message': 'Quote created successfully',
+                'quote': {
+                    'id': quote.id,
+                    'total_price': total_price,
+                    'status': quote.status,
+                    'customization': quote.customization
+                }
+            }), 201
 
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'error': str(e)}), 500
 
-@quotes_bp.route('/quotes', methods=['GET'])
-@jwt_required()
-def get_user_quotes():
-    try:
-        user_id = get_jwt_identity()
-        quotes = Quote.query.filter_by(user_id=user_id).order_by(
-            Quote.created_at.desc()).all()
+    @app.route('/quotes', methods=['GET'])
+    @jwt_required()
+    def get_quotes():
+        try:
+            current_user_id = get_jwt_identity()
+            quotes = Quote.query.filter_by(user_id=current_user_id).all()
 
-        return jsonify([{
-            'id': quote.id,
-            'product_name': quote.product.name,
-            'total_price': quote.total_price,
-            'co2_savings': quote.co2_savings,
-            'sustainability_score': quote.sustainability_score,
-            'status': quote.status,
-            'created_at': quote.created_at.isoformat()
-        } for quote in quotes]), 200
+            return jsonify({
+                'quotes': [{
+                    'id': q.id,
+                    'product_name': q.product.name,
+                    'total_price': q.total_price,
+                    'status': q.status,
+                    'customization': q.customization,
+                    'created_at': q.created_at.isoformat()
+                } for q in quotes]
+            }), 200
 
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
 
-# Funciones auxiliares
+    @app.route('/quotes/<int:quote_id>', methods=['GET'])
+    @jwt_required()
+    def get_quote(quote_id):
+        try:
+            current_user_id = get_jwt_identity()
+            quote = Quote.query.get(quote_id)
 
+            if not quote or quote.user_id != current_user_id:
+                return jsonify({'error': 'Quote not found'}), 404
 
-def calculate_additional_cost(configuration):
-    """Calcula coste adicional basado en la configuración"""
-    additional_cost = 0
+            return jsonify({
+                'quote': {
+                    'id': quote.id,
+                    'product': {
+                        'id': quote.product.id,
+                        'name': quote.product.name,
+                        'description': quote.product.description,
+                        'image_url': quote.product.image_url
+                    },
+                    'total_price': quote.total_price,
+                    'status': quote.status,
+                    'customization': quote.customization,
+                    'created_at': quote.created_at.isoformat()
+                }
+            }), 200
 
-    # Lógica de cálculo de costes adicionales
-    if configuration.get('solar_system') == 'premium':
-        additional_cost += 120000
-    if configuration.get('battery_system') == 'extended':
-        additional_cost += 80000
-    if configuration.get('materials') == 'premium_eco':
-        additional_cost += 150000
-
-    return additional_cost
-
-
-def calculate_co2_savings(product, configuration):
-    """Calcula ahorro de CO2 basado en producto y configuración"""
-    base_savings = product.co2_savings
-
-    # Bonus por configuración ecológica
-    eco_bonus = 0
-    if configuration.get('solar_system'):
-        eco_bonus += 15
-    if configuration.get('eco_materials'):
-        eco_bonus += 10
-
-    return base_savings + eco_bonus
-
-
-def calculate_sustainability_score(configuration):
-    """Calcula puntuación de sostenibilidad"""
-    score = 100  # Base
-
-    # Bonus por opciones ecológicas
-    if configuration.get('solar_system') == 'premium':
-        score += 25
-    if configuration.get('battery_system') == 'extended':
-        score += 20
-    if configuration.get('materials') == 'premium_eco':
-        score += 30
-
-    return min(score, 200)  # Máximo 200%
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500

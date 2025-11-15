@@ -1,5 +1,5 @@
 import React from "react";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from '../../context/AuthContext.jsx';
 
 const CustomerLayout = ({ children }) => {
   const { user, logout } = useAuth();

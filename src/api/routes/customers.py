@@ -1,73 +1,92 @@
-from flask import Blueprint, request, jsonify
+from flask import request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from api.models import db, User, CustomerProfile
-
-customers_bp = Blueprint('customers', __name__)
-
-# PUT /customer/profile - Actualizar perfil de cliente
+from ..models import db, User
 
 
-@customers_bp.route('/customer/profile', methods=['PUT'])
-@jwt_required()
-def update_customer_profile():
-    try:
-        user_id = get_jwt_identity()
-        user = User.query.get(user_id)
+def setup_customers_routes(app):
 
-        if user.role != 'customer':
-            return jsonify({'error': 'Customer access required'}), 403
+    @app.route('/customer/profile', methods=['GET'])
+    @jwt_required()
+    def get_customer_profile():
+        try:
+            current_user_id = get_jwt_identity()
+            user = User.query.get(current_user_id)
 
-        data = request.get_json()
-        profile = user.customer_profile
+            if not user:
+                return jsonify({'error': 'User not found'}), 404
 
-        if not profile:
-            return jsonify({'error': 'Profile not found'}), 404
+            return jsonify({
+                'user': {
+                    'id': user.id,
+                    'email': user.email,
+                    'first_name': user.first_name,
+                    'last_name': user.last_name,
+                    'phone': user.phone,
+                    'company_name': user.company_name,
+                    'role': user.role,
+                    'created_at': user.created_at.isoformat()
+                }
+            }), 200
 
-        # Campos actualizables
-        if 'first_name' in data:
-            profile.first_name = data['first_name']
-        if 'last_name' in data:
-            profile.last_name = data['last_name']
-        if 'phone' in data:
-            profile.phone = data['phone']
-        if 'address' in data:
-            profile.address = data['address']
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
 
-        db.session.commit()
+    @app.route('/customer/profile', methods=['PUT'])
+    @jwt_required()
+    def update_customer_profile():
+        try:
+            current_user_id = get_jwt_identity()
+            user = User.query.get(current_user_id)
 
-        return jsonify({
-            'message': 'Profile updated successfully',
-            'profile': {
-                'first_name': profile.first_name,
-                'last_name': profile.last_name,
-                'phone': profile.phone,
-                'address': profile.address
-            }
-        }), 200
+            if not user:
+                return jsonify({'error': 'User not found'}), 404
 
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+            data = request.get_json()
 
-# DELETE /customer/profile - Eliminar cuenta de cliente
+            if 'first_name' in data:
+                user.first_name = data['first_name']
+            if 'last_name' in data:
+                user.last_name = data['last_name']
+            if 'phone' in data:
+                user.phone = data['phone']
+            if 'company_name' in data:
+                user.company_name = data['company_name']
 
+            db.session.commit()
 
-@customers_bp.route('/customer/profile', methods=['DELETE'])
-@jwt_required()
-def delete_customer_account():
-    try:
-        user_id = get_jwt_identity()
-        user = User.query.get(user_id)
+            return jsonify({
+                'message': 'Profile updated successfully',
+                'user': {
+                    'id': user.id,
+                    'email': user.email,
+                    'first_name': user.first_name,
+                    'last_name': user.last_name,
+                    'phone': user.phone,
+                    'company_name': user.company_name,
+                    'role': user.role
+                }
+            }), 200
 
-        if user.role != 'customer':
-            return jsonify({'error': 'Customer access required'}), 403
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'error': str(e)}), 500
 
-        # Soft delete - marcar como inactivo
-        user.is_active = False
-        db.session.commit()
+    @app.route('/customer/delete-account', methods=['DELETE'])
+    @jwt_required()
+    def delete_customer_account():
+        try:
+            current_user_id = get_jwt_identity()
+            user = User.query.get(current_user_id)
 
-        return jsonify({'message': 'Account deleted successfully'}), 200
+            if not user:
+                return jsonify({'error': 'User not found'}), 404
 
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+            # Soft delete - mark as inactive
+            user.is_active = False
+            db.session.commit()
+
+            return jsonify({'message': 'Account deleted successfully'}), 200
+
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'error': str(e)}), 500

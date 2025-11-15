@@ -1,12 +1,20 @@
-"""
-This module takes care of starting the API Server, Loading the DB and Adding the endpoints
-"""
-from flask import Flask, request, jsonify, url_for, Blueprint
-from api.models import db, User
-from api.utils import generate_sitemap, APIException
-from flask_cors import CORS
+from .routes.products import setup_products_routes
+from .routes.quotes import setup_quotes_routes
+from .routes.customers import setup_customers_routes
+from .routes.business import setup_business_routes
+from .routes.analytics import setup_analytics_routes
 
 api = Blueprint('api', __name__)
+
+
+def setup_routes(app):
+    # Registrar todas las rutas
+    setup_products_routes(app)
+    setup_quotes_routes(app)
+    setup_customers_routes(app)
+    setup_business_routes(app)
+    setup_analytics_routes(app)
+
 
 # Allow CORS requests to this API
 CORS(api)
